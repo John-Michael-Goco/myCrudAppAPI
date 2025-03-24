@@ -11,19 +11,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $course = $_POST["course"];
 
     $sql = "UPDATE `students` 
-                SET studentID = '$studentNumber', 
-                    name = '$name', 
-                    address = '$address', 
-                    email = '$email', 
-                    phoneNumber = '$phoneNumber', 
-                    course = '$course', 
+                SET studentID = ?, 
+                    name = ?, 
+                    address = ?, 
+                    email = ?, 
+                    phoneNumber = ?, 
+                    course = ?, 
                     updated_at = NOW() 
-                WHERE studentID = '$studentNumberOrig'";
+                WHERE studentID = ?";
 
-    if ($conn->query($sql) === TRUE) {
-        echo json_encode(["status" => "success", "message" => "Details Updated"]);
+    if ($stmt = $conn->prepare($sql)) {
+        // Bind parameters ("sssssss" indicates 7 string parameters)
+        $stmt->bind_param("sssssss", $studentNumber, $name, $address, $email, $phoneNumber, $course, $studentNumberOrig);
+
+        if ($stmt->execute()) {
+            echo json_encode(["status" => "success", "message" => "Details Updated"]);
+        } else {
+            echo json_encode(["status" => "failed", "message" => "Error: " . $stmt->error]);
+        }
+
+        $stmt->close();
     } else {
-        echo json_encode(["status" => "failed", "message" => "Error: " . $conn->error]);
+        echo json_encode(["status" => "failed", "message" => "Error preparing statement: " . $conn->error]);
     }
 }
+
 $conn->close();
